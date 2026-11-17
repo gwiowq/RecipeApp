@@ -1,17 +1,23 @@
 ﻿using System;
+using Ninject;
 using RecipeApp.Model;
+using RecipeApp.BusinessLogic;
 
 namespace RecipeApp.ConsoleApp
 {
     /// <summary>
-    /// Консольное представление приложения "Книга рецептов".
+    /// Консольное представление приложения.
     /// </summary>
     class Program
     {
+        /// <summary>
+        /// Точка входа в приложение. Запускает меню.
+        /// </summary>
         static void Main(string[] args)
         {
-            var logic = new Logic();
-            SeedData(logic);
+            var kernel = new StandardKernel(new SimpleConfigModule());
+            var logic = kernel.Get<Logic>();
+            var crudService = kernel.Get<RecipeCrudService>();
 
             while (true)
             {
@@ -28,10 +34,10 @@ namespace RecipeApp.ConsoleApp
 
                 switch (Console.ReadLine())
                 {
-                    case "1": ShowAll(logic); break;
-                    case "2": AddRecipe(logic); break;
-                    case "3": DeleteRecipe(logic); break;
-                    case "4": EditRecipe(logic); break;
+                    case "1": ShowAll(crudService); break;
+                    case "2": AddRecipe(crudService); break;
+                    case "3": DeleteRecipe(crudService); break;
+                    case "4": EditRecipe(crudService); break;
                     case "5": GroupByCategory(logic); break;
                     case "6": FindByIngredient(logic); break;
                     case "0": return;
@@ -42,96 +48,95 @@ namespace RecipeApp.ConsoleApp
         }
 
         /// <summary>
-        /// Запрашивает у пользователя целое число. Повторяет ввод, пока не получит корректное значение.
+        /// Запрашивает у пользователя целое число с проверкой ввода.
         /// </summary>
+        /// <param name="prompt">Приглашение к вводу.</param>
+        /// <returns>Введенное целое число.</returns>
         static int ReadInt(string prompt)
         {
             while (true)
             {
                 Console.Write(prompt);
                 string? input = Console.ReadLine();
-                if (int.TryParse(input, out int value))
-                    return value;
-                Console.WriteLine("Ошибка: нужно ввести целое число. Попробуйте ещё раз.");
+                if (int.TryParse(input, out int value)) return value;
+                Console.WriteLine("Ошибка: нужно ввести целое число.");
             }
         }
 
-        /// <summary>Заполняет хранилище начальными данными.</summary>
-        static void SeedData(Logic logic)
-        {
-            logic.Create("Борщ", "Суп", "Свёкла", 90, 4, 120);
-            logic.Create("Цезарь", "Салат", "Курица", 20, 2, 250);
-            logic.Create("Тирамису", "Десерт", "Маскарпоне", 60, 6, 350);
-            logic.Create("Паста Карбонара", "Основное", "Спагетти", 25, 2, 480);
-        }
-
-        /// <summary>Выводит все рецепты в консоль.</summary>
-        static void ShowAll(Logic logic)
+        /// <summary>
+        /// Выводит список всех рецептов.
+        /// </summary>
+        /// <param name="crudService">Сервис для работы с данными.</param>
+        static void ShowAll(RecipeCrudService crudService)
         {
             Console.WriteLine("\n--- Все рецепты ---");
-            foreach (var r in logic.ReadAll())
+            foreach (var r in crudService.ReadAll())
                 Console.WriteLine(r);
         }
 
-        /// <summary>Запрашивает данные и создаёт новый рецепт.</summary>
-        static void AddRecipe(Logic logic)
+        /// <summary>
+        /// Запрашивает данные у пользователя и создает новый рецепт.
+        /// </summary>
+        /// <param name="crudService">Сервис для работы с данными.</param>
+        static void AddRecipe(RecipeCrudService crudService)
         {
             Console.WriteLine("\n--- Добавление рецепта ---");
-            Console.WriteLine($"Допустимые категории: {string.Join(", ", logic.GetAllowedCategories())}");
-
-            Console.Write("Название: "); string name = Console.ReadLine() ?? string.Empty;
-            Console.Write("Категория: "); string category = Console.ReadLine() ?? string.Empty;
-            Console.Write("Основной ингредиент: "); string ingredient = Console.ReadLine() ?? string.Empty;
+            Console.Write("Название: "); string name = Console.ReadLine() ?? "";
+            Console.Write("Категория: "); string category = Console.ReadLine() ?? "";
+            Console.Write("Ингредиент: "); string ingredient = Console.ReadLine() ?? "";
             int time = ReadInt("Время (мин): ");
             int servings = ReadInt("Порций: ");
             int calories = ReadInt("Калорий: ");
 
             try
             {
-                var recipe = logic.Create(name, category, ingredient, time, servings, calories);
-                Console.WriteLine($"Создан рецепт: {recipe}");
+                crudService.Create(name, category, ingredient, time, servings, calories);
+                Console.WriteLine("Рецепт успешно добавлен!");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка: {ex.Message}");
-            }
+            catch (Exception ex) { Console.WriteLine($"Ошибка: {ex.Message}"); }
         }
 
-        /// <summary>Удаляет рецепт по Id.</summary>
-        static void DeleteRecipe(Logic logic)
+        /// <summary>
+        /// Удаляет рецепт по выбранному Id.
+        /// </summary>
+        /// <param name="crudService">Сервис для работы с данными.</param>
+        static void DeleteRecipe(RecipeCrudService crudService)
         {
+            ShowAll(crudService);
             int id = ReadInt("Введите Id рецепта для удаления: ");
-            Console.WriteLine(logic.Delete(id) ? "Удалено" : "Не найдено");
+            Console.WriteLine(crudService.Delete(id) ? "Удалено" : "Не найдено");
         }
 
-        /// <summary>Редактирует рецепт по Id.</summary>
-        static void EditRecipe(Logic logic)
+        /// <summary>
+        /// Редактирует существующий рецепт по Id.
+        /// </summary>
+        /// <param name="crudService">Сервис для работы с данными.</param>
+        static void EditRecipe(RecipeCrudService crudService)
         {
+            ShowAll(crudService);
             int id = ReadInt("Введите Id рецепта для редактирования: ");
-            var recipe = logic.Read(id);
+            var recipe = crudService.Read(id);
             if (recipe == null) { Console.WriteLine("Не найдено"); return; }
 
-            Console.WriteLine($"Допустимые категории: {string.Join(", ", logic.GetAllowedCategories())}");
-
-            Console.Write($"Название ({recipe.Name}): "); string name = Console.ReadLine() ?? string.Empty;
-            Console.Write($"Категория ({recipe.Category}): "); string category = Console.ReadLine() ?? string.Empty;
-            Console.Write($"Осн. ингредиент ({recipe.MainIngredient}): "); string ingredient = Console.ReadLine() ?? string.Empty;
+            Console.Write($"Название ({recipe.Name}): "); string name = Console.ReadLine() ?? "";
+            Console.Write($"Категория ({recipe.Category}): "); string category = Console.ReadLine() ?? "";
+            Console.Write($"Ингредиент ({recipe.MainIngredient}): "); string ingredient = Console.ReadLine() ?? "";
             int time = ReadInt($"Время ({recipe.CookingMinutes}): ");
             int servings = ReadInt($"Порций ({recipe.Servings}): ");
             int calories = ReadInt($"Калорий ({recipe.Calories}): ");
 
             try
             {
-                logic.Update(id, name, category, ingredient, time, servings, calories);
+                crudService.Update(id, name, category, ingredient, time, servings, calories);
                 Console.WriteLine("Обновлено");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка: {ex.Message}");
-            }
+            catch (Exception ex) { Console.WriteLine($"Ошибка: {ex.Message}"); }
         }
 
-        /// <summary>Выводит рецепты, сгруппированные по категориям.</summary>
+        /// <summary>
+        /// Выводит рецепты, сгруппированные по категориям.
+        /// </summary>
+        /// <param name="logic">Бизнес-логика для группировки.</param>
         static void GroupByCategory(Logic logic)
         {
             Console.WriteLine("\n--- Рецепты по категориям ---");
@@ -143,15 +148,17 @@ namespace RecipeApp.ConsoleApp
             }
         }
 
-        /// <summary>Ищет рецепты по основному ингредиенту.</summary>
+        /// <summary>
+        /// Ищет рецепты по указанному ингредиенту.
+        /// </summary>
+        /// <param name="logic">Бизнес-логика для поиска.</param>
         static void FindByIngredient(Logic logic)
         {
             Console.Write("Введите ингредиент: ");
-            string ingredient = Console.ReadLine() ?? string.Empty;
+            string ingredient = Console.ReadLine() ?? "";
             var found = logic.FindByIngredient(ingredient);
             Console.WriteLine($"\nНайдено: {found.Count}");
-            foreach (var r in found)
-                Console.WriteLine(r);
+            foreach (var r in found) Console.WriteLine(r);
         }
     }
 }

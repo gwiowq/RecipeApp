@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RecipeApp.BusinessLogic\RecipeApp.BusinessLogic.csproj" />
     <ProjectReference Include="..\RecipeApp.Model\RecipeApp.Model.csproj" />
   </ItemGroup>
 

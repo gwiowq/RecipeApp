@@ -3,20 +3,20 @@
 namespace RecipeApp.Model
 {
     /// <summary>
-    /// Сущность "Рецепт" — описывает блюдо и его характеристики.
+    /// Сущность "Рецепт".
     /// </summary>
-    public class Recipe
+    public class Recipe : IDomainObject
     {
-        /// <summary>Уникальный идентификатор рецепта.</summary>
+        /// <summary>Уникальный идентификатор.</summary>
         public int Id { get; set; }
 
         /// <summary>Название блюда.</summary>
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>Категория блюда (суп, салат, десерт и т.д.).</summary>
+        /// <summary>Категория блюда.</summary>
         public string Category { get; set; } = string.Empty;
 
-        /// <summary>Основной ингредиент блюда.</summary>
+        /// <summary>Основной ингредиент.</summary>
         public string MainIngredient { get; set; } = string.Empty;
 
         /// <summary>Время приготовления в минутах.</summary>
@@ -25,7 +25,7 @@ namespace RecipeApp.Model
         /// <summary>Количество порций.</summary>
         public int Servings { get; set; }
 
-        /// <summary>Калорийность одной порции (ккал).</summary>
+        /// <summary>Калорийность.</summary>
         public int Calories { get; set; }
 
         /// <summary>

@@ -24,10 +24,17 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1000, 650);
-            this.Text = "Книга рецептов (WinForms)";
+            SuspendLayout();
+            // 
+            // MainForm
+            // 
+            AutoScaleDimensions = new SizeF(13F, 32F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1000, 650);
+            Name = "MainForm";
+            Text = "Книга рецептов (WinForms)";
+            Load += MainForm_Load;
+            ResumeLayout(false);
         }
     }
 }
